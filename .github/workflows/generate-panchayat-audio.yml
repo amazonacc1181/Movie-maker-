@@ -8,7 +8,7 @@ on:
       - "generate_edge_audio.py"
       - ".github/workflows/generate-panchayat-audio.yml"
 permissions:
-  contents: read
+  contents: write
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -24,7 +24,17 @@ jobs:
           python -m pip install -r requirements.txt
       - name: Generate Hindi neural narration
         run: |
-          python generate_edge_audio.py --input scripts/panchayat-season-5-hinglish.txt --output audio/Panchayat_Season_5_Hinglish_Narration.mp3 --voice hi-IN-MadhurNeural --rate=-3%
+          python generate_edge_audio.py --input scripts/panchayat-season-5-hinglish.txt --output audio/Panchayat_Season_5_Hinglish_Narration.mp3 --voice hi-IN-MadhurNeural --rate=+15%
+      - name: Commit MP3 into the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audio/Panchayat_Season_5_Hinglish_Narration.mp3
+          if ! git diff --cached --quiet; then
+            git commit -m "Add generated Panchayat Season 5 narration MP3"
+            git push
+          fi
+
       - name: Upload MP3 artifact
         uses: actions/upload-artifact@v4
         with:
