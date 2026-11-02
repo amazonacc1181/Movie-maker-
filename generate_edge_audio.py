@@ -29,7 +29,7 @@ async def main():
     if not src.exists(): raise SystemExit(f"Script not found: {src}")
     text=src.read_text(encoding="utf-8").strip()
     # Do not speak stage directions such as [INTRO] or [SECTION 1].
-    text=re.sub(r"(?m)^\\[[^\\]\\n]+\\]\\s*$","",text).strip()
+    text="\n".join(line for line in text.splitlines() if not (line.strip().startswith("[") and line.strip().endswith("]"))).strip()
     if not text: raise SystemExit("Script is empty.")
     out=Path(a.output); out=out if out.is_absolute() else ROOT/out
     out.parent.mkdir(parents=True,exist_ok=True); tmp=out.parent/".tts_parts"; tmp.mkdir(exist_ok=True)
