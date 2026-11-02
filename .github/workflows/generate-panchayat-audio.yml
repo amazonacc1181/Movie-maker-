@@ -1,0 +1,36 @@
+name: Generate Panchayat Narration Audio
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/panchayat-season-5-hinglish.txt"
+      - "generate_edge_audio.py"
+      - ".github/workflows/generate-panchayat-audio.yml"
+permissions:
+  contents: read
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Generate Hindi neural narration
+        run: |
+          python generate_edge_audio.py --input scripts/panchayat-season-5-hinglish.txt --output audio/Panchayat_Season_5_Hinglish_Narration.mp3 --voice hi-IN-MadhurNeural --rate=-3%
+      - name: Upload MP3 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: panchayat-season5-narration
+          path: audio/Panchayat_Season_5_Hinglish_Narration.mp3
+          if-no-files-found: error
+          retention-days: 30
