@@ -38,3 +38,11 @@ A push changing the sample script or workflow starts an audio build. When comple
 - Never commit API keys or credentials.
 - TTS usage rights do not grant rights to movie footage, music, posters or other source material.
 - Check YouTube's current disclosure rules for realistic synthetic content.
+
+
+## Download the built audio from GitHub
+
+The narration workflow commits its MP3 output into:
+`audio/Panchayat_Season_5_Hinglish_Narration.mp3`
+
+Open that file in the repository and use **Download raw file** (or open the raw URL and save the audio). The workflow also uploads the same build as a temporary artifact under Actions.
