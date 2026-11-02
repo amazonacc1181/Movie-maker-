@@ -46,3 +46,9 @@ The narration workflow commits its MP3 output into:
 `audio/Panchayat_Season_5_Hinglish_Narration.mp3`
 
 Open that file in the repository and use **Download raw file** (or open the raw URL and save the audio). The workflow also uploads the same build as a temporary artifact under Actions.
+
+
+
+## Latest 3–4 minute creator-style narration
+
+The short, livelier Panchayat Season 5 build is saved at `audio/Panchayat_Season_5_Expressive_3min.mp3`. The script is at `scripts/panchayat-season-5-short-hinglish.txt`.
