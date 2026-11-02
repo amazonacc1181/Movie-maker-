@@ -4,7 +4,7 @@ import argparse, asyncio, re
 from pathlib import Path
 import edge_tts
 ROOT=Path(__file__).resolve().parent
-def split_text(text, limit=2500):
+def split_text(text, limit=4000):
     paras=[p.strip() for p in re.split(r"\n\s*\n",text) if p.strip()]
     chunks=[]; current=""
     for p in paras:
@@ -36,7 +36,7 @@ async def main():
     parts=[]
     for i,chunk in enumerate(split_text(text),1):
         target=tmp/f"part_{i:03d}.mp3"; print(f"Generating part {i}")
-        await edge_tts.Communicate(chunk,a.voice,rate=a.rate,pitch=a.pitch).save(str(target)); parts.append(target)
+        await asyncio.wait_for(edge_tts.Communicate(chunk,a.voice,rate=a.rate,pitch=a.pitch).save(str(target)), timeout=180); parts.append(target)
     def mp3_frames(path):
         data=path.read_bytes()
         # Remove per-part ID3 tags before joining MPEG audio frames.
