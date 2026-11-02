@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Create Hindi neural narration via the Edge TTS community package."""
-import argparse, asyncio, re, subprocess
+import argparse, asyncio, re
 from pathlib import Path
 import edge_tts
 ROOT=Path(__file__).resolve().parent
@@ -37,9 +37,15 @@ async def main():
     for i,chunk in enumerate(split_text(text),1):
         target=tmp/f"part_{i:03d}.mp3"; print(f"Generating part {i}")
         await edge_tts.Communicate(chunk,a.voice,rate=a.rate,pitch=a.pitch).save(str(target)); parts.append(target)
-    if len(parts)==1: parts[0].replace(out)
-    else:
-        concat=tmp/"concat.txt"; concat.write_text("".join("file '"+p.as_posix()+"'\n" for p in parts),encoding="utf-8")
-        subprocess.run(["ffmpeg","-y","-f","concat","-safe","0","-i",str(concat),"-c","copy",str(out)],check=True)
+    def mp3_frames(path):
+        data=path.read_bytes()
+        # Remove per-part ID3 tags before joining MPEG audio frames.
+        if data.startswith(b"ID3") and len(data)>=10:
+            size=((data[6]&0x7f)<<21)|((data[7]&0x7f)<<14)|((data[8]&0x7f)<<7)|(data[9]&0x7f)
+            data=data[10+size:]
+        if len(data)>=128 and data[-128:-125]==b"TAG":
+            data=data[:-128]
+        return data
+    out.write_bytes(b"".join(mp3_frames(p) for p in parts))
     print(f"Audio saved: {out} ({out.stat().st_size} bytes)")
 if __name__=="__main__": asyncio.run(main())
