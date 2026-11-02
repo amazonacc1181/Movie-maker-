@@ -52,3 +52,13 @@ Open that file in the repository and use **Download raw file** (or open the raw 
 ## Latest 3–4 minute creator-style narration
 
 The short, livelier Panchayat Season 5 build is saved at `audio/Panchayat_Season_5_Expressive_3min.mp3`. The script is at `scripts/panchayat-season-5-short-hinglish.txt`.
+
+
+## Final mastered narration
+
+The latest lively creator-style version is available here:
+
+- **Mastered MP3:** `audio/Panchayat_Season_5_Lively_Clear_3m31.mp3` — 3:31, 44.1 kHz, 128 kbps mono, loudness-normalised.
+- **Raw neural render:** `audio/Panchayat_Season_5_Expressive_3min.mp3`.
+
+The mastered version is pitch-preserving speed-adjusted and loudness-normalised for consistent playback.
