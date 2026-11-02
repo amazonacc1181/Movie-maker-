@@ -1,0 +1,31 @@
+name: Store Existing Narration MP3 in Repository
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/store-audio-from-artifact.yml"
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  store-audio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Download the completed narration build
+        uses: actions/download-artifact@v4
+        with:
+          name: panchayat-season5-narration
+          path: audio
+          repository: ${{ github.repository }}
+          run-id: 41497831150
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit MP3 to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audio/Panchayat_Season_5_Hinglish_Narration.mp3
+          git commit -m "Store generated Panchayat narration MP3"
+          git push
