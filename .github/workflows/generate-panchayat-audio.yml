@@ -1,10 +1,15 @@
-name: Generate legacy Edge TTS draft (manual only)
+name: Generate Panchayat Narration Audio
 concurrency:
   group: panchayat-audio-build
   cancel-in-progress: false
-# Manual-only legacy fallback. Use the ElevenLabs studio for expressive narration.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/panchayat-season-5-short-hinglish.txt"
+      - "generate_edge_audio.py"
+      - ".github/workflows/generate-panchayat-audio.yml"
 permissions:
   contents: write
 jobs:
