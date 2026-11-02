@@ -1,0 +1,46 @@
+name: Master and Publish Panchayat Narration
+concurrency:
+  group: panchayat-audio-master
+  cancel-in-progress: false
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/master-panchayat-audio.yml"
+permissions:
+  contents: write
+jobs:
+  master:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Master audio for clear playback
+        run: |
+          ffmpeg -y -i audio/Panchayat_Season_5_Expressive_3min.mp3             -af "atempo=1.10,loudnorm=I=-16:TP=-1.5:LRA=8"             -ar 44100 -ac 1 -b:a 128k             audio/Panchayat_Season_5_Lively_Clear_3m57.mp3
+          ffprobe -v error -show_entries format=duration,size             -of default=noprint_wrappers=1             audio/Panchayat_Season_5_Lively_Clear_3m57.mp3
+
+      - name: Upload mastered MP3
+        uses: actions/upload-artifact@v4
+        with:
+          name: panchayat-season5-lively-clear
+          path: audio/Panchayat_Season_5_Lively_Clear_3m57.mp3
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Commit mastered audio to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audio/Panchayat_Season_5_Lively_Clear_3m57.mp3
+          git commit -m "Add mastered 3m57 Panchayat narration MP3"
+          git pull --rebase origin main
+          git push
