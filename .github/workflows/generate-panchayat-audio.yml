@@ -24,12 +24,12 @@ jobs:
           python -m pip install -r requirements.txt
       - name: Generate Hindi neural narration
         run: |
-          python generate_edge_audio.py --input scripts/panchayat-season-5-hinglish.txt --output audio/Panchayat_Season_5_Expressive_3min.mp3 --voice hi-IN-MadhurNeural --rate=-2%
+          python generate_edge_audio.py --input scripts/panchayat-season-5-short-hinglish.txt --output audio/Panchayat_Season_5_Expressive_3min.mp3 --voice hi-IN-MadhurNeural --rate=-2%
       - name: Commit MP3 into the repository
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add audio/Panchayat_Season_5_Hinglish_Narration.mp3
+          git add audio/Panchayat_Season_5_Expressive_3min.mp3
           if ! git diff --cached --quiet; then
             git commit -m "Add generated Panchayat Season 5 short expressive narration MP3"
             git push
@@ -39,6 +39,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: panchayat-season5-expressive-3min
-          path: audio/Panchayat_Season_5_Hinglish_Narration.mp3
+          path: audio/Panchayat_Season_5_Expressive_3min.mp3
           if-no-files-found: error
           retention-days: 30
