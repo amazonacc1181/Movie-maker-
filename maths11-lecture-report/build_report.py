@@ -71,6 +71,7 @@ def fetch_one(item):
         "noplaylist": True, "socket_timeout": 35,
         "retries": 3, "extractor_retries": 3, "fragment_retries": 2,
         "ignoreerrors": False,
+        "extractor_args": {"youtube": {"player_client": ["tv", "web_safari"]}},
     }
     last_error = None
     for attempt in range(1, 3):
