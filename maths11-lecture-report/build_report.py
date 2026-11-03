@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Fetch selected Class 11 Maths YouTube metadata with yt-dlp and create PDF/CSV/JSON."""
 from __future__ import annotations
-import csv, json, os, sys, time, traceback
+import csv, json, os, sys, time, traceback, urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from yt_dlp import YoutubeDL
@@ -54,6 +55,43 @@ def date_text(value):
             pass
     return s
 
+
+INVIDIOUS_INSTANCES = [
+    "https://inv.nadeko.net",
+    "https://invidious.nerdvpn.de",
+    "https://yt.chocolatemoo53.com",
+    "https://invidious.tiekoetter.com",
+]
+
+def fetch_invidious(video_id):
+    """Fallback metadata lookup against currently listed public Invidious instances."""
+    def request_one(base):
+        url = f"{base}/api/v1/videos/{video_id}"
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "Mozilla/5.0 (compatible; Class11MathsMetadata/1.0)",
+            "Accept": "application/json",
+        })
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        if not isinstance(data, dict) or not data.get("title"):
+            raise RuntimeError(f"{base}: incomplete metadata")
+        if data.get("lengthSeconds") is None and data.get("published") is None:
+            raise RuntimeError(f"{base}: duration and publication fields missing")
+        return data, base
+
+    errors = []
+    with ThreadPoolExecutor(max_workers=len(INVIDIOUS_INSTANCES)) as pool:
+        futures = [pool.submit(request_one, base) for base in INVIDIOUS_INSTANCES]
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                for pending in futures:
+                    pending.cancel()
+                return result
+            except Exception as exc:
+                errors.append(str(exc)[:160])
+    raise RuntimeError("No listed Invidious instance returned metadata: " + " | ".join(errors[:3]))
+
 def fetch_one(item):
     number, chapter, teacher, video_id = item
     url = f"https://www.youtube.com/watch?v={video_id}"
@@ -102,9 +140,36 @@ def fetch_one(item):
             last_error = str(exc)
             if attempt < 2:
                 time.sleep(2)
-    row["status"] = "Unavailable"
-    row["error"] = (last_error or "Unknown extraction error")[:600]
-    return row
+    # yt-dlp can be challenged by YouTube's bot checks on cloud runner IPs.
+    # Try Invidious' documented video metadata API as a labelled fallback.
+    try:
+        data, instance = fetch_invidious(video_id)
+        published = data.get("published")
+        if published is not None:
+            try:
+                published = datetime.utcfromtimestamp(int(published)).strftime("%Y%m%d")
+            except (ValueError, TypeError, OSError):
+                published = None
+        duration = data.get("lengthSeconds")
+        row.update({
+            "title": data.get("title"),
+            "duration_seconds": int(duration) if duration is not None else None,
+            "duration": ydl_utils_duration(duration),
+            "upload_date_raw": published,
+            "upload_date": date_text(published) or "Unavailable",
+            "channel": data.get("author"),
+            "view_count": data.get("viewCount"),
+            "live_status": "Live now" if data.get("liveNow") else "Recorded / unknown",
+            "availability": "Public API fallback",
+            "status": "Retrieved",
+            "error": None,
+            "metadata_extractor": f"Invidious API fallback ({instance})",
+        })
+        return row
+    except Exception as fallback_error:
+        row["status"] = "Unavailable"
+        row["error"] = ((last_error or "Unknown yt-dlp error") + " | Fallback: " + str(fallback_error))[:600]
+        return row
 
 def ydl_utils_duration(value):
     if value is None:
