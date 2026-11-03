@@ -198,6 +198,7 @@ def build_pdf(rows, path):
     styles.add(ParagraphStyle(name="Cell", parent=styles["Normal"], fontSize=6.5, leading=8,
                               wordWrap="CJK"))
     styles.add(ParagraphStyle(name="CellBold", parent=styles["Cell"], fontName="Helvetica-Bold"))
+    styles.add(ParagraphStyle(name="TableHeader", parent=styles["Cell"], fontName="Helvetica-Bold", textColor=colors.white))
     styles.add(ParagraphStyle(name="Small", parent=styles["Normal"], fontSize=7, leading=9,
                               textColor=colors.HexColor("#475569")))
     ok = [r for r in rows if r["status"] == "Retrieved"]
@@ -208,7 +209,7 @@ def build_pdf(rows, path):
 
     story = [
         Paragraph("CLASS 11 MATHEMATICS", styles["ReportTitle"]),
-        Paragraph("Lecture metadata report | 20 selected chapters | Metadata extracted using yt-dlp", styles["Sub"]),
+        Paragraph("Lecture metadata report | 20 selected chapters | yt-dlp attempted; public metadata API used as fallback", styles["Sub"]),
         Spacer(1, 5*mm),
     ]
     summary_data = [
@@ -230,11 +231,11 @@ def build_pdf(rows, path):
         ("LEFTPADDING",(0,0),(-1,-1),8),("RIGHTPADDING",(0,0),(-1,-1),8),
     ]))
     story += [summary, Spacer(1, 5*mm),
-              Paragraph("<b>Teacher selection rule:</b> Sachin Sir first; otherwise Tarun Sir; otherwise Ashish Sir, following the uploaded chapter planner. Upload dates are presented as returned by yt-dlp (YYYYMMDD converted to DD Mon YYYY).", styles["Small"]),
+              Paragraph("<b>Teacher selection rule:</b> Sachin Sir first; otherwise Tarun Sir; otherwise Ashish Sir, following the uploaded chapter planner. The runner attempted yt-dlp first, but YouTube returned a bot-check challenge. The 20 successful metadata rows were therefore obtained from the public Invidious video API fallback.", styles["Small"]),
               Spacer(1, 4*mm)]
 
-    headers = ["#", "Chapter", "Teacher", "Video title (clickable)", "Duration", "Upload date", "Channel", "Views", "Status / extraction note"]
-    data = [[Paragraph(f"<b>{h}</b>", styles["Cell"]) for h in headers]]
+    headers = ["#", "Chapter", "Teacher", "Video title (clickable)", "Duration", "Upload / published date", "Channel", "Views", "Source", "Result"]
+    data = [[Paragraph(h, styles["TableHeader"]) for h in headers]]
     for r in rows:
         title = r["title"] or "Title unavailable"
         link = f'<link href="{r["url"]}" color="#4338ca">{xml_escape(title)}</link>'
@@ -250,9 +251,10 @@ def build_pdf(rows, path):
             r["upload_date"],
             Paragraph(xml_escape(r["channel"] or "Unavailable"), styles["Cell"]),
             f'{r["view_count"]:,}' if isinstance(r["view_count"], int) else "Unavailable",
+            Paragraph("Invidious API" if "Invidious" in (r.get("metadata_extractor") or "") else "yt-dlp", styles["Cell"]),
             Paragraph(xml_escape(detail), styles["Cell"]),
         ])
-    widths = [8*mm, 39*mm, 19*mm, 57*mm, 19*mm, 23*mm, 35*mm, 16*mm, 48*mm]
+    widths = [8*mm, 37*mm, 19*mm, 53*mm, 19*mm, 23*mm, 31*mm, 20*mm, 22*mm, 39*mm]
     table = LongTable(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
     table.setStyle(TableStyle([
         ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#172554")),
@@ -264,8 +266,8 @@ def build_pdf(rows, path):
         ("TOPPADDING",(0,0),(-1,-1),5),("BOTTOMPADDING",(0,0),(-1,-1),5),
     ]))
     story += [table, Spacer(1, 5*mm),
-              Paragraph("Notes: 'Unavailable' means yt-dlp could not obtain that field or the video could not be accessed during this run. Live broadcasts may expose no final duration until processing is complete. The report does not estimate missing values.", styles["Small"]),
-              Paragraph(f"Report generated (UTC): {datetime.utcnow().strftime('%d %b %Y, %H:%M:%S')} | Source: YouTube video pages via yt-dlp | Video IDs and links are provided in the companion JSON/CSV.", styles["Small"])]
+              Paragraph("Notes: All 20 rows were returned by the Invidious API fallback after yt-dlp requests were blocked by YouTube bot checks on the GitHub runner. Duration is the API lengthSeconds field; upload/published date is the API published timestamp rendered as a UTC date. The source is shown per row. The report does not estimate missing values.", styles["Small"]),
+              Paragraph(f"Report generated (UTC): {datetime.utcnow().strftime('%d %b %Y, %H:%M:%S')} | YouTube links are clickable in the title column; companion CSV/JSON files include video IDs and raw metadata.", styles["Small"])]
     def footer(canvas, document):
         canvas.saveState()
         canvas.setFont("Helvetica",7)
